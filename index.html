@@ -1,112 +1,362 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>我的相册</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:#1a1a1a;color:#fff;font-family:system-ui,sans-serif;padding:20px;}
-h1{text-align:center;margin-bottom:30px;}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;max-width:1400px;margin:0 auto;}
-.gallery img{width:100%;height:220px;object-fit:cover;border-radius:8px;cursor:pointer;transition:0.2s;}
-.gallery img:hover{transform:scale(1.02);}
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
-/* 大图弹窗 */
-.lightbox{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:999;}
-.lightbox-img-wrap{max-width:90%;max-height:calc(100% - 120px);}
-.lightbox img{max-width:100%;max-height:100%;border-radius:4px;transition:transform 0.3s;}
-.lightbox .toolbar{margin-top:20px;display:flex;gap:12px;}
-.lightbox button{padding:8px 16px;font-size:16px;border:none;border-radius:6px;cursor:pointer;background:#444;color:#fff;}
-.lightbox .close{position:absolute;top:20px;right:30px;color:#fff;font-size:36px;cursor:pointer;}
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top left, #2a2f3a 0%, transparent 45%),
+      radial-gradient(circle at bottom right, #1e2230 0%, transparent 45%),
+      #12141a;
+    color: #f5f5f7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+      "Microsoft YaHei", sans-serif;
+    padding: 40px 24px 80px;
+  }
+
+  .page-header {
+    max-width: 1400px;
+    margin: 0 auto 36px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #ffffff;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: #8a8f98;
+  }
+
+  .gallery {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 18px;
+  }
+
+  .gallery-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    background: #1c1f26;
+    aspect-ratio: 4 / 3;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+  }
+
+  .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.45s ease;
+  }
+
+  .gallery-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .gallery-item:hover img {
+    transform: scale(1.06);
+  }
+
+  .gallery-item::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0) 55%,
+      rgba(0, 0, 0, 0.35) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .gallery-item:hover::after {
+    opacity: 1;
+  }
+
+  /* 大图弹窗 */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.96);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    padding: 24px;
+  }
+
+  .lightbox.active {
+    display: flex;
+  }
+
+  .lightbox-main {
+    position: relative;
+    max-width: 92%;
+    max-height: 78%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lightbox img {
+    max-width: 100%;
+    max-height: 78vh;
+    border-radius: 14px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+    transition: transform 0.3s ease;
+    background: #000;
+  }
+
+  .close {
+    position: absolute;
+    top: 18px;
+    right: 22px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 22px;
+    line-height: 44px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.25s ease;
+    z-index: 10;
+  }
+
+  .close:hover {
+    background: rgba(255, 80, 80, 0.95);
+  }
+
+  .toolbar {
+    margin-top: 26px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .toolbar button {
+    min-width: 96px;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #fff;
+    background: #2a2f3a;
+    border: 1px solid #3a4050;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .toolbar button:hover {
+    background: #3b4254;
+    border-color: #5a647c;
+    transform: translateY(-2px);
+  }
+
+  .toolbar button:active {
+    transform: translateY(0);
+  }
+
+  .footer-tip {
+    text-align: center;
+    margin-top: 60px;
+    color: #6c7180;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+
+  @media (max-width: 640px) {
+    h1 {
+      font-size: 22px;
+    }
+
+    .gallery {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .toolbar button {
+      min-width: 84px;
+      padding: 10px 14px;
+      font-size: 14px;
+    }
+  }
 </style>
 </head>
+
 <body>
-<h1>相册</h1>
-<div class="gallery" id="gallery"></div>
-<div class="lightbox" id="lightbox">
-  <span class="close" onclick="closeLightbox()">×</span>
-  <div class="lightbox-img-wrap">
-    <img id="lightImg">
+  <header class="page-header">
+    <h1>我的相册</h1>
+    <span class="subtitle">私密相册</span>
+  </header>
+
+  <main class="gallery" id="gallery"></main>
+
+  <div class="footer-tip">点击图片查看大图 · 支持旋转与下载</div>
+
+  <div class="lightbox" id="lightbox">
+    <span class="close" id="closeBtn" title="关闭">×</span>
+
+    <div class="lightbox-main">
+      <img id="lightImg" alt="大图预览" />
+    </div>
+
+    <div class="toolbar">
+      <button id="rotateLeftBtn">↺ 左旋</button>
+      <button id="rotateRightBtn">↻ 右旋</button>
+      <button id="downloadBtn">⬇ 下载原图</button>
+    </div>
   </div>
-  <div class="toolbar">
-    <button onclick="rotateLeft()">↺ 左旋</button>
-    <button onclick="rotateRight()">↻ 右旋</button>
-    <button onclick="downloadImage()">⬇ 下载</button>
-  </div>
-</div>
 
-<script>
-// ========== 密码设置 ==========
-const PASSWORD = "123456"; // 修改引号内文字更换密码
-// ========== 图片列表 ==========
-const IMAGE_LIST = [
-  {src:"images/aisi.jpg", name:"aisi.jpg"},
-  {src:"images/xiaohei.jpg", name:"xiaohei.jpg"},
-];
+  <script>
+    // ========== 密码设置 ==========
+    const PASSWORD = "123456"; // 修改这里更换密码
 
-let currentImageSrc = "";
-let currentImageName = "";
-let rotateDeg = 0;
+    // ========== 图片列表 ==========
+    const IMAGE_LIST = [
+      { src: "images/aisi.jpg", name: "aisi.jpg" },
+      { src: "images/xiaohei.jpg", name: "xiaohei.jpg" }
+    ];
 
-// 密码校验
-function checkPwd(){
-  const input = prompt("请输入相册密码：");
-  if(input === PASSWORD){
-    renderGallery();
-  }else{
-    alert("密码错误！");
-    document.body.innerHTML = "<h1>无权访问</h1>";
-  }
-}
+    let currentImageSrc = "";
+    let currentImageName = "";
+    let rotateDeg = 0;
 
-// 渲染画廊
-function renderGallery(){
-  const galleryEl = document.getElementById("gallery");
-  IMAGE_LIST.forEach(item=>{
-    const img = document.createElement('img');
-    img.src = item.src;
-    img.alt = item.name;
-    img.onclick = ()=>openLightbox(item.src, item.name);
-    galleryEl.appendChild(img);
-  })
-}
+    // 密码校验
+    function checkPwd() {
+      const input = prompt("请输入相册密码：");
 
-// 打开大图弹窗
-function openLightbox(src, name){
-  currentImageSrc = src;
-  currentImageName = name;
-  rotateDeg = 0;
-  document.getElementById("lightImg").src = src;
-  document.getElementById("lightImg").style.transform = `rotate(${rotateDeg}deg)`;
-  document.getElementById("lightbox").style.display = "flex";
-}
+      if (input !== null && input === PASSWORD) {
+        renderGallery();
+      } else {
+        alert("密码错误！");
+        document.body.innerHTML = `
+          <div style="
+            min-height:100vh;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background:#12141a;
+            color:#fff;
+            font-size:22px;
+            letter-spacing:2px;">
+            无权访问
+          </div>`;
+      }
+    }
 
-// 旋转
-function rotateLeft(){
-  rotateDeg -=90;
-  document.getElementById("lightImg").style.transform = `rotate(${rotateDeg}deg)`;
-}
-function rotateRight(){
-  rotateDeg +=90;
-  document.getElementById("lightImg").style.transform = `rotate(${rotateDeg}deg)`;
-}
+    // 渲染画廊
+    function renderGallery() {
+      const galleryEl = document.getElementById("gallery");
 
-// 下载图片
-function downloadImage(){
-  const a = document.createElement('a');
-  a.href = currentImageSrc;
-  a.download = currentImageName;
-  a.click();
-}
+      IMAGE_LIST.forEach((item) => {
+        const wrap = document.createElement("div");
+        wrap.className = "gallery-item";
 
-// 关闭弹窗
-function closeLightbox(){
-  document.getElementById("lightbox").style.display = "none";
-}
+        const img = document.createElement("img");
+        img.src = item.src;
+        img.alt = item.name;
+        img.loading = "lazy";
 
-// 页面加载触发密码
-checkPwd();
-</script>
+        wrap.appendChild(img);
+        wrap.addEventListener("click", () =>
+          openLightbox(item.src, item.name)
+        );
+
+        galleryEl.appendChild(wrap);
+      });
+    }
+
+    // 打开大图
+    function openLightbox(src, name) {
+      currentImageSrc = src;
+      currentImageName = name;
+      rotateDeg = 0;
+
+      const img = document.getElementById("lightImg");
+      img.src = src;
+      img.style.transform = `rotate(${rotateDeg}deg)`;
+
+      document.getElementById("lightbox").classList.add("active");
+    }
+
+    // 关闭大图
+    function closeLightbox() {
+      document.getElementById("lightbox").classList.remove("active");
+    }
+
+    // 旋转
+    function rotateLeft() {
+      rotateDeg -= 90;
+      document.getElementById("lightImg").style.transform =
+        `rotate(${rotateDeg}deg)`;
+    }
+
+    function rotateRight() {
+      rotateDeg += 90;
+      document.getElementById("lightImg").style.transform =
+        `rotate(${rotateDeg}deg)`;
+    }
+
+    // 下载
+    function downloadImage() {
+      if (!currentImageSrc) return;
+
+      const a = document.createElement("a");
+      a.href = currentImageSrc;
+      a.download = currentImageName || "photo.jpg";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // 绑定按钮
+    document.getElementById("closeBtn").addEventListener("click", closeLightbox);
+    document
+      .getElementById("rotateLeftBtn")
+      .addEventListener("click", rotateLeft);
+    document
+      .getElementById("rotateRightBtn")
+      .addEventListener("click", rotateRight);
+    document
+      .getElementById("downloadBtn")
+      .addEventListener("click", downloadImage);
+
+    // 点击遮罩关闭
+    document.getElementById("lightbox").addEventListener("click", (e) => {
+      if (e.target.id === "lightbox") closeLightbox();
+    });
+
+    // 页面加载触发密码
+    checkPwd();
+  </script>
 </body>
 </html>
