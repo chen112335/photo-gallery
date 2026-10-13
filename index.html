@@ -14,7 +14,6 @@
             --text-dim: #8888a0;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
             background: var(--bg-dark);
@@ -22,7 +21,6 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
-
         body::before {
             content: '';
             position: fixed;
@@ -36,7 +34,6 @@
             0%   { transform: translate(0,0) rotate(0deg); }
             100% { transform: translate(-5%,5%) rotate(5deg); }
         }
-
         /* 顶部 */
         .header {
             text-align: center;
@@ -53,7 +50,6 @@
             margin-bottom: 12px;
         }
         .header p { color: var(--text-dim); font-size: 1.05em; }
-
         .stats {
             display: inline-block;
             margin-top: 18px;
@@ -65,7 +61,6 @@
             color: var(--text-dim);
         }
         .stats span { color: var(--accent); font-weight: bold; }
-
         /* 瀑布流 */
         .masonry {
             column-count: 4;
@@ -77,7 +72,6 @@
         @media (max-width:1200px){ .masonry{ column-count:3; } }
         @media (max-width:800px) { .masonry{ column-count:2; } }
         @media (max-width:500px) { .masonry{ column-count:1; } }
-
         .gallery-item {
             break-inside: avoid;
             margin-bottom: 20px;
@@ -102,7 +96,6 @@
             transition: transform .6s ease;
         }
         .gallery-item:hover img { transform: scale(1.08); }
-
         .gallery-item .overlay {
             position: absolute;
             bottom: 0; left: 0; right: 0;
@@ -112,7 +105,6 @@
         }
         .gallery-item:hover .overlay { opacity: 1; }
         .gallery-item .overlay span { color: white; font-size: .9em; }
-
         /* 空状态 */
         .empty-state {
             text-align: center;
@@ -128,7 +120,6 @@
             border-radius: 4px;
             color: var(--accent);
         }
-
         /* ============ 灯箱 ============ */
         .lightbox {
             display: none;
@@ -142,7 +133,6 @@
             opacity: 0; transition: opacity .3s;
         }
         .lightbox.active { display: flex; opacity: 1; }
-
         .lb-img-wrap {
             flex: 1;
             display: flex;
@@ -158,7 +148,6 @@
             transition: transform .4s cubic-bezier(.23,1,.32,1);
             transform-origin: center center;
         }
-
         .lb-btn {
             position: absolute;
             background: rgba(255,255,255,.1);
@@ -174,13 +163,11 @@
             z-index: 10;
         }
         .lb-btn:hover { background: rgba(255,255,255,.2); transform: scale(1.1); }
-
         .lb-close { top: 25px; right: 25px; }
         .lb-prev  { left: 25px; top: 50%; transform: translateY(-50%); }
         .lb-next  { right: 25px; top: 50%; transform: translateY(-50%); }
         .lb-prev:hover { transform: translateY(-50%) scale(1.1); }
         .lb-next:hover { transform: translateY(-50%) scale(1.1); }
-
         /* 底部工具栏 */
         .lb-toolbar {
             position: absolute;
@@ -233,7 +220,6 @@
             min-width: 30px;
             text-align: center;
         }
-
         footer {
             text-align: center;
             padding: 30px 20px 50px;
@@ -245,25 +231,20 @@
     </style>
 </head>
 <body>
-
     <div class="header">
         <h1>✨ MY GALLERY</h1>
-        <p>把图片放进 images 文件夹，自动出现</p>
+        <p>图片画廊</p>
         <div class="stats">共 <span id="count">0</span> 张图片</div>
     </div>
-
     <div class="masonry" id="gallery"></div>
-
     <!-- 灯箱 -->
     <div class="lightbox" id="lightbox">
         <button class="lb-btn lb-close" onclick="closeLB()" title="关闭 (ESC)">✕</button>
         <button class="lb-btn lb-prev"  onclick="prevImg()" title="上一张 (←)">‹</button>
         <button class="lb-btn lb-next"  onclick="nextImg()" title="下一张 (→)">›</button>
-
         <div class="lb-img-wrap">
             <img id="lb-img" src="" alt="">
         </div>
-
         <div class="lb-toolbar">
             <button onclick="rotateImg(-90)" title="左旋转 90° (↓)">↺</button>
             <button onclick="rotateImg(90)"  title="右旋转 90° (↑)">↻</button>
@@ -274,15 +255,17 @@
             <button class="download-btn" onclick="downloadImg()" title="下载图片 (D)">⬇</button>
         </div>
     </div>
-
     <footer>© 2026 My Gallery · Made with <span class="heart">♥</span></footer>
-
 <script>
-// ============ 配置 ============
-const EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
-const MAX_SCAN = 300;
-const CUSTOM_LIST = ['aisi.jpg'];   // 特殊文件名放这里
-// =============================
+// ============ 在这里填写你的图片列表！！！ ============
+// 格式：{src:"images/文件名", name:"文件名"},
+// GIF、webp动图直接写进来就可以
+const IMAGE_LIST = [
+    {src:"images/aisi.jpg", name:"aisi.jpg"},
+    // 示例：{src:"images/1.gif", name:"1.gif"},
+    // 示例：{src:"images/xxx.webp", name:"xxx.webp"},
+];
+// =====================================================
 
 const gallery   = document.getElementById('gallery');
 const countEl   = document.getElementById('count');
@@ -290,60 +273,26 @@ const lb        = document.getElementById('lightbox');
 const lbImg     = document.getElementById('lb-img');
 const lbCounter = document.getElementById('lb-counter');
 const angleDisp = document.getElementById('angle-display');
-
-let allImages = [];       // [{src, name}, ...]
+let allImages = [];
 let currentIndex = 0;
 let currentRotation = 0;
 
-async function tryLoad(path) {
-    return new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => resolve(path);
-        img.onerror = () => resolve(null);
-        img.src = path;
-    });
-}
-
 async function scanImages() {
-    let found = [];
-
-    // 1.jpg, 2.jpg ...
-    for (let i = 1; i <= MAX_SCAN; i++) {
-        for (const ext of EXTENSIONS) {
-            const r = await tryLoad(`images/${i}${ext}`);
-            if (r) { found.push({ src: r, name: `${i}${ext}` }); break; }
-        }
-    }
-    // photo1.jpg ...
-    for (let i = 1; i <= MAX_SCAN; i++) {
-        for (const ext of EXTENSIONS) {
-            const path = `images/photo${i}${ext}`;
-            const r = await tryLoad(path);
-            if (r && !found.some(f => f.src === r)) { found.push({ src: r, name: `photo${i}${ext}` }); break; }
-        }
-    }
-    // 自定义
-    for (const name of CUSTOM_LIST) {
-        const r = await tryLoad(`images/${name}`);
-        if (r && !found.some(f => f.src === r)) found.push({ src: r, name });
-    }
-    return found;
+    // 直接返回手动写好的图片数组，不再探测文件
+    return IMAGE_LIST;
 }
 
 function renderGallery(images) {
     allImages = images;
     countEl.textContent = images.length;
-
     if (!images.length) {
         gallery.innerHTML = `<div class="empty-state">
             <div class="emoji">📁</div>
             <h3>还没有图片哦</h3>
-            <p>把图片放进 <code>images</code> 文件夹</p>
-            <p style="margin-top:10px">命名为 <code>1.jpg</code>、<code>2.png</code>，或加进 <code>CUSTOM_LIST</code></p>
+            <p>在代码 IMAGE_LIST 里添加图片文件名</p>
         </div>`;
         return;
     }
-
     gallery.innerHTML = images.map((item, i) => `
         <div class="gallery-item" onclick="openLB(${i})" style="animation-delay:${i*0.04}s">
             <img src="${item.src}" loading="lazy">
@@ -351,7 +300,6 @@ function renderGallery(images) {
         </div>
     `).join('');
 }
-
 // ============ 灯箱 ============
 function openLB(i) {
     currentIndex = i;
@@ -365,7 +313,6 @@ function openLB(i) {
 function closeLB() { lb.classList.remove('active'); }
 function nextImg() { openLB((currentIndex+1)  % allImages.length); }
 function prevImg() { openLB((currentIndex-1 + allImages.length) % allImages.length); }
-
 // ============ 旋转 ============
 function rotateImg(deg) {
     currentRotation = ((currentRotation + deg) % 360 + 360) % 360;
@@ -377,7 +324,6 @@ function resetRotate() {
     lbImg.style.transform = 'rotate(0deg)';
     angleDisp.textContent = '0°';
 }
-
 // ============ 下载 ============
 function downloadImg() {
     // 如果旋转过，先把旋转后的图片绘制成新图再下载
@@ -388,17 +334,14 @@ function downloadImg() {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const rad = currentRotation * Math.PI / 180;
-
             // 根据旋转角度决定画布尺寸
             const absCos = Math.abs(Math.cos(rad));
             const absSin = Math.abs(Math.sin(rad));
             canvas.width  = img.width  * absCos + img.height * absSin;
             canvas.height = img.width  * absSin + img.height * absCos;
-
             ctx.translate(canvas.width/2, canvas.height/2);
             ctx.rotate(rad);
             ctx.drawImage(img, -img.width/2, -img.height/2);
-
             canvas.toBlob(blob => {
                 const url = URL.createObjectURL(blob);
                 triggerDownload(url, allImages[currentIndex].name);
@@ -411,7 +354,6 @@ function downloadImg() {
         triggerDownload(lbImg.src, allImages[currentIndex].name);
     }
 }
-
 function triggerDownload(url, filename) {
     const a = document.createElement('a');
     a.href = url;
@@ -420,7 +362,6 @@ function triggerDownload(url, filename) {
     a.click();
     document.body.removeChild(a);
 }
-
 // ============ 快捷键 ============
 document.addEventListener('keydown', e => {
     if (!lb.classList.contains('active')) return;
@@ -437,7 +378,6 @@ document.addEventListener('keydown', e => {
 lb.addEventListener('click', e => {
     if (e.target === lb || e.target.classList.contains('lb-img-wrap')) closeLB();
 });
-
 // 启动
 scanImages().then(renderGallery);
 </script>
