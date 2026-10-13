@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的图片收藏 · Gallery</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #15151f;
+            --accent: #00d4ff;
+            --accent2: #ff00aa;
+            --text: #ffffff;
+            --text-dim: #8888a0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: -50%;
+            background: radial-gradient(circle at 20% 30%, rgba(0,212,255,.08) 0%, transparent 40%),
+                        radial-gradient(circle at 80% 70%, rgba(255,0,170,.08) 0%, transparent 40%);
+            z-index: -1;
+            animation: float 20s ease-in-out infinite alternate;
+        }
+        @keyframes float {
+            0%   { transform: translate(0,0) rotate(0deg); }
+            100% { transform: translate(-5%,5%) rotate(5deg); }
+        }
+
+        /* 顶部 */
+        .header {
+            text-align: center;
+            padding: 60px 20px 30px;
+        }
+        .header h1 {
+            font-size: clamp(2em,5vw,3.5em);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+        .header p { color: var(--text-dim); font-size: 1.05em; }
+
+        .stats {
+            display: inline-block;
+            margin-top: 18px;
+            padding: 6px 18px;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 30px;
+            font-size: .88em;
+            color: var(--text-dim);
+        }
+        .stats span { color: var(--accent); font-weight: bold; }
+
+        /* 瀑布流 */
+        .masonry {
+            column-count: 4;
+            column-gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+        @media (max-width:1200px){ .masonry{ column-count:3; } }
+        @media (max-width:800px) { .masonry{ column-count:2; } }
+        @media (max-width:500px) { .masonry{ column-count:1; } }
+
+        .gallery-item {
+            break-inside: avoid;
+            margin-bottom: 20px;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            background: var(--bg-card);
+            transition: transform .4s cubic-bezier(.23,1,.32,1);
+            animation: fadeIn .6s ease backwards;
+        }
+        @keyframes fadeIn {
+            from { opacity:0; transform:translateY(30px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .gallery-item:hover {
+            transform: scale(1.03);
+            box-shadow: 0 20px 60px rgba(0,212,255,.3);
+        }
+        .gallery-item img {
+            width: 100%; display: block;
+            transition: transform .6s ease;
+        }
+        .gallery-item:hover img { transform: scale(1.08); }
+
+        .gallery-item .overlay {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            padding: 20px;
+            background: linear-gradient(transparent, rgba(0,0,0,.9));
+            opacity: 0; transition: opacity .3s;
+        }
+        .gallery-item:hover .overlay { opacity: 1; }
+        .gallery-item .overlay span { color: white; font-size: .9em; }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 120px 20px;
+            color: var(--text-dim);
+            grid-column: 1/-1;
+        }
+        .empty-state .emoji { font-size: 5em; margin-bottom: 20px; }
+        .empty-state h3 { color: var(--text); margin-bottom: 10px; font-size: 1.3em; }
+        .empty-state code {
+            background: var(--bg-card);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent);
+        }
+
+        /* ============ 灯箱 ============ */
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.97);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            opacity: 0; transition: opacity .3s;
+        }
+        .lightbox.active { display: flex; opacity: 1; }
+
+        .lb-img-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 0 100px;
+        }
+        .lightbox img {
+            max-width: 92vw;
+            max-height: 78vh;
+            border-radius: 8px;
+            box-shadow: 0 0 80px rgba(0,212,255,.2);
+            transition: transform .4s cubic-bezier(.23,1,.32,1);
+            transform-origin: center center;
+        }
+
+        .lb-btn {
+            position: absolute;
+            background: rgba(255,255,255,.1);
+            border: none;
+            color: white;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            font-size: 22px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all .2s;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10;
+        }
+        .lb-btn:hover { background: rgba(255,255,255,.2); transform: scale(1.1); }
+
+        .lb-close { top: 25px; right: 25px; }
+        .lb-prev  { left: 25px; top: 50%; transform: translateY(-50%); }
+        .lb-next  { right: 25px; top: 50%; transform: translateY(-50%); }
+        .lb-prev:hover { transform: translateY(-50%) scale(1.1); }
+        .lb-next:hover { transform: translateY(-50%) scale(1.1); }
+
+        /* 底部工具栏 */
+        .lb-toolbar {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            background: rgba(255,255,255,.08);
+            backdrop-filter: blur(15px);
+            padding: 8px 18px;
+            border-radius: 40px;
+            border: 1px solid rgba(255,255,255,.1);
+            align-items: center;
+        }
+        .lb-toolbar button {
+            background: transparent;
+            border: none;
+            color: white;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 17px;
+            transition: all .2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .lb-toolbar button:hover {
+            background: rgba(0,212,255,.2);
+            transform: scale(1.15);
+        }
+        .lb-toolbar .download-btn {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            font-weight: bold;
+        }
+        .lb-toolbar .download-btn:hover {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(0,212,255,.5);
+        }
+        .lb-toolbar .counter {
+            color: var(--text-dim);
+            font-size: .88em;
+            padding: 0 12px;
+            border-left: 1px solid rgba(255,255,255,.1);
+            border-right: 1px solid rgba(255,255,255,.1);
+        }
+        .angle-display {
+            font-size: .75em;
+            color: var(--accent);
+            min-width: 30px;
+            text-align: center;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 20px 50px;
+            color: var(--text-dim);
+            font-size: .85em;
+            border-top: 1px solid rgba(255,255,255,.05);
+        }
+        footer .heart { color: var(--accent2); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>✨ MY GALLERY</h1>
+        <p>把图片放进 images 文件夹，自动出现</p>
+        <div class="stats">共 <span id="count">0</span> 张图片</div>
+    </div>
+
+    <div class="masonry" id="gallery"></div>
+
+    <!-- 灯箱 -->
+    <div class="lightbox" id="lightbox">
+        <button class="lb-btn lb-close" onclick="closeLB()" title="关闭 (ESC)">✕</button>
+        <button class="lb-btn lb-prev"  onclick="prevImg()" title="上一张 (←)">‹</button>
+        <button class="lb-btn lb-next"  onclick="nextImg()" title="下一张 (→)">›</button>
+
+        <div class="lb-img-wrap">
+            <img id="lb-img" src="" alt="">
+        </div>
+
+        <div class="lb-toolbar">
+            <button onclick="rotateImg(-90)" title="左旋转 90° (↓)">↺</button>
+            <button onclick="rotateImg(90)"  title="右旋转 90° (↑)">↻</button>
+            <button onclick="rotateImg(180)" title="翻转 180°">⟲</button>
+            <button onclick="resetRotate()"  title="还原旋转">⟳</button>
+            <span class="angle-display" id="angle-display">0°</span>
+            <span class="counter" id="lb-counter">1 / 1</span>
+            <button class="download-btn" onclick="downloadImg()" title="下载图片 (D)">⬇</button>
+        </div>
+    </div>
+
+    <footer>© 2026 My Gallery · Made with <span class="heart">♥</span></footer>
+
+<script>
+// ============ 配置 ============
+const EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+const MAX_SCAN = 300;
+const CUSTOM_LIST = ['aisi.jpg'];   // 特殊文件名放这里
+// =============================
+
+const gallery   = document.getElementById('gallery');
+const countEl   = document.getElementById('count');
+const lb        = document.getElementById('lightbox');
+const lbImg     = document.getElementById('lb-img');
+const lbCounter = document.getElementById('lb-counter');
+const angleDisp = document.getElementById('angle-display');
+
+let allImages = [];       // [{src, name}, ...]
+let currentIndex = 0;
+let currentRotation = 0;
+
+async function tryLoad(path) {
+    return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => resolve(path);
+        img.onerror = () => resolve(null);
+        img.src = path;
+    });
+}
+
+async function scanImages() {
+    let found = [];
+
+    // 1.jpg, 2.jpg ...
+    for (let i = 1; i <= MAX_SCAN; i++) {
+        for (const ext of EXTENSIONS) {
+            const r = await tryLoad(`images/${i}${ext}`);
+            if (r) { found.push({ src: r, name: `${i}${ext}` }); break; }
+        }
+    }
+    // photo1.jpg ...
+    for (let i = 1; i <= MAX_SCAN; i++) {
+        for (const ext of EXTENSIONS) {
+            const path = `images/photo${i}${ext}`;
+            const r = await tryLoad(path);
+            if (r && !found.some(f => f.src === r)) { found.push({ src: r, name: `photo${i}${ext}` }); break; }
+        }
+    }
+    // 自定义
+    for (const name of CUSTOM_LIST) {
+        const r = await tryLoad(`images/${name}`);
+        if (r && !found.some(f => f.src === r)) found.push({ src: r, name });
+    }
+    return found;
+}
+
+function renderGallery(images) {
+    allImages = images;
+    countEl.textContent = images.length;
+
+    if (!images.length) {
+        gallery.innerHTML = `<div class="empty-state">
+            <div class="emoji">📁</div>
+            <h3>还没有图片哦</h3>
+            <p>把图片放进 <code>images</code> 文件夹</p>
+            <p style="margin-top:10px">命名为 <code>1.jpg</code>、<code>2.png</code>，或加进 <code>CUSTOM_LIST</code></p>
+        </div>`;
+        return;
+    }
+
+    gallery.innerHTML = images.map((item, i) => `
+        <div class="gallery-item" onclick="openLB(${i})" style="animation-delay:${i*0.04}s">
+            <img src="${item.src}" loading="lazy">
+            <div class="overlay"><span>#${i+1}</span></div>
+        </div>
+    `).join('');
+}
+
+// ============ 灯箱 ============
+function openLB(i) {
+    currentIndex = i;
+    currentRotation = 0;
+    lbImg.src = allImages[i].src;
+    lbImg.style.transform = 'rotate(0deg)';
+    angleDisp.textContent = '0°';
+    lbCounter.textContent = `${i+1} / ${allImages.length}`;
+    lb.classList.add('active');
+}
+function closeLB() { lb.classList.remove('active'); }
+function nextImg() { openLB((currentIndex+1)  % allImages.length); }
+function prevImg() { openLB((currentIndex-1 + allImages.length) % allImages.length); }
+
+// ============ 旋转 ============
+function rotateImg(deg) {
+    currentRotation = ((currentRotation + deg) % 360 + 360) % 360;
+    lbImg.style.transform = `rotate(${currentRotation}deg)`;
+    angleDisp.textContent = currentRotation + '°';
+}
+function resetRotate() {
+    currentRotation = 0;
+    lbImg.style.transform = 'rotate(0deg)';
+    angleDisp.textContent = '0°';
+}
+
+// ============ 下载 ============
+function downloadImg() {
+    // 如果旋转过，先把旋转后的图片绘制成新图再下载
+    if (currentRotation !== 0) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const rad = currentRotation * Math.PI / 180;
+
+            // 根据旋转角度决定画布尺寸
+            const absCos = Math.abs(Math.cos(rad));
+            const absSin = Math.abs(Math.sin(rad));
+            canvas.width  = img.width  * absCos + img.height * absSin;
+            canvas.height = img.width  * absSin + img.height * absCos;
+
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.rotate(rad);
+            ctx.drawImage(img, -img.width/2, -img.height/2);
+
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                triggerDownload(url, allImages[currentIndex].name);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }, 'image/jpeg', 0.95);
+        };
+        img.onerror = () => triggerDownload(lbImg.src, allImages[currentIndex].name);
+        img.src = lbImg.src;
+    } else {
+        triggerDownload(lbImg.src, allImages[currentIndex].name);
+    }
+}
+
+function triggerDownload(url, filename) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'image';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+// ============ 快捷键 ============
+document.addEventListener('keydown', e => {
+    if (!lb.classList.contains('active')) return;
+    switch(e.key) {
+        case 'Escape':   closeLB(); break;
+        case 'ArrowRight': nextImg(); break;
+        case 'ArrowLeft':  prevImg(); break;
+        case 'ArrowUp':    rotateImg(90); break;
+        case 'ArrowDown':  rotateImg(-90); break;
+        case '0':          resetRotate(); break;
+        case 'd': case 'D': downloadImg(); break;
+    }
+});
+lb.addEventListener('click', e => {
+    if (e.target === lb || e.target.classList.contains('lb-img-wrap')) closeLB();
+});
+
+// 启动
+scanImages().then(renderGallery);
+</script>
+</body>
+</html>
